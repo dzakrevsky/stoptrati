@@ -59,6 +59,11 @@ export default function Dashboard() {
     return categoryData.filter((c) => c.value > c.limit);
   }, [categoryData]);
 
+  const dailyPercent = Math.min((stats.dayTotal / settings.dailyLimit) * 100, 100);
+  const monthlyPercent = Math.min((stats.monthTotal / settings.monthlyLimit) * 100, 100);
+  const isDailyOver = stats.dayTotal > settings.dailyLimit;
+  const isMonthlyOver = stats.monthTotal > settings.monthlyLimit;
+
   const statCards = [
     { label: 'Сегодня', value: stats.dayTotal, icon: Calendar, delay: 'stagger-1' },
     { label: 'Неделя', value: stats.weekTotal, icon: TrendingUp, delay: 'stagger-2' },
@@ -92,14 +97,63 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {overBudgetCategories.length > 0 && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 animate-fade-in-up stagger-4">
+        <div className="glass-card p-5">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm text-[var(--apple-muted)]">Дневной лимит</span>
+            <span className={isDailyOver ? 'text-[var(--apple-danger)] font-medium' : 'text-[var(--apple-muted)] text-sm'}>
+              {formatAmount(stats.dayTotal, settings.currency)} / {formatAmount(settings.dailyLimit, settings.currency)}
+            </span>
+          </div>
+          <div className="h-2.5 rounded-full bg-[var(--apple-surface-2)] overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${dailyPercent}%`,
+                backgroundColor: isDailyOver ? 'var(--apple-danger)' : 'var(--apple-accent)',
+              }}
+            />
+          </div>
+          {isDailyOver && (
+            <p className="mt-2 text-xs text-[var(--apple-danger)]">Дневной лимит превышен</p>
+          )}
+        </div>
+        <div className="glass-card p-5">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm text-[var(--apple-muted)]">Месячный лимит</span>
+            <span className={isMonthlyOver ? 'text-[var(--apple-danger)] font-medium' : 'text-[var(--apple-muted)] text-sm'}>
+              {formatAmount(stats.monthTotal, settings.currency)} / {formatAmount(settings.monthlyLimit, settings.currency)}
+            </span>
+          </div>
+          <div className="h-2.5 rounded-full bg-[var(--apple-surface-2)] overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${monthlyPercent}%`,
+                backgroundColor: isMonthlyOver ? 'var(--apple-danger)' : 'var(--apple-success)',
+              }}
+            />
+          </div>
+          {isMonthlyOver && (
+            <p className="mt-2 text-xs text-[var(--apple-danger)]">Месячный лимит превышен</p>
+          )}
+        </div>
+      </div>
+
+      {(overBudgetCategories.length > 0 || isDailyOver || isMonthlyOver) && (
         <div className="glass-card p-4 mb-8 border-[var(--apple-danger)]/30 bg-[var(--apple-danger)]/5 animate-fade-in-up stagger-4">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-[var(--apple-danger)] mt-0.5" />
             <div>
               <p className="font-medium text-[var(--apple-danger)]">Превышен лимит</p>
               <p className="text-sm text-[var(--apple-muted)]">
-                Категории: {overBudgetCategories.map((c) => c.name).join(', ')}
+                {[
+                  ...(isDailyOver ? ['дневной'] : []),
+                  ...(isMonthlyOver ? ['месячный'] : []),
+                  ...(overBudgetCategories.length > 0
+                    ? [`категории: ${overBudgetCategories.map((c) => c.name).join(', ')}`]
+                    : []),
+                ].join('; ')}
               </p>
             </div>
           </div>

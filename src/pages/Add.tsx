@@ -4,6 +4,7 @@ import { Save, ArrowLeft, Check } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import CategoryIcon from '@/components/CategoryIcon';
 import { formatAmount, formatDate } from '@/utils/format';
+import { PEOPLE } from '@/types';
 import type { Expense } from '@/types';
 
 export default function Add() {
@@ -20,6 +21,7 @@ export default function Add() {
 
   const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
   const [typeId, setTypeId] = useState('');
+  const [person, setPerson] = useState(PEOPLE[0]);
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
@@ -30,6 +32,7 @@ export default function Add() {
     if (editingExpense) {
       setCategoryId(editingExpense.categoryId);
       setTypeId(editingExpense.typeId);
+      setPerson(editingExpense.person);
       setAmount(String(editingExpense.amount));
       setDate(editingExpense.date);
       setNote(editingExpense.note);
@@ -68,6 +71,7 @@ export default function Add() {
     const data: Omit<Expense, 'id'> = {
       categoryId,
       typeId,
+      person,
       amount: Number(amount),
       date,
       note,
@@ -157,6 +161,26 @@ export default function Add() {
             </div>
 
             <div>
+              <label className="block text-sm font-medium mb-2">Кто потратил</label>
+              <div className="grid grid-cols-2 gap-2">
+                {PEOPLE.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPerson(p)}
+                    className={`p-3 rounded-xl border text-center font-medium transition-all ${
+                      person === p
+                        ? 'border-[var(--apple-accent)] bg-[var(--apple-accent)]/10 text-[var(--apple-accent)]'
+                        : 'border-[var(--apple-border)] bg-[var(--apple-surface-2)] hover:border-white/20'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium mb-2">Сумма</label>
               <div className="relative">
                 <input
@@ -218,6 +242,7 @@ export default function Add() {
                 <CategoryIcon icon={selectedCategory.icon} color={selectedCategory.color} size="lg" />
                 <p className="mt-4 text-lg font-medium">{selectedType.name}</p>
                 <p className="text-sm text-[var(--apple-muted)]">{selectedCategory.name}</p>
+                <p className="mt-1 text-sm font-medium text-[var(--apple-accent)]">{person}</p>
                 <p className="mt-4 text-4xl font-semibold tracking-tight text-[var(--apple-accent)]">
                   {formatAmount(Number(amount) || 0, settings.currency)}
                 </p>

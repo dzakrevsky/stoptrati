@@ -22,7 +22,7 @@ export default function ExpenseCard({ expense, onDelete, showActions = true }: E
     <div className="glass-card p-4 flex items-center gap-4 animate-fade-in-up">
       <CategoryIcon icon={category.icon} color={category.color} size="md" />
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="font-medium text-[var(--apple-text)] truncate">
             {type.name}
           </span>
@@ -31,6 +31,9 @@ export default function ExpenseCard({ expense, onDelete, showActions = true }: E
             style={{ backgroundColor: `${category.color}20`, color: category.color }}
           >
             {category.name}
+          </span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--apple-accent)]/10 text-[var(--apple-accent)]">
+            {expense.person}
           </span>
         </div>
         <p className="text-sm text-[var(--apple-muted)] truncate">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Moon, Sun, Coins, Trash2, AlertTriangle } from 'lucide-react';
+import { Moon, Sun, Coins, Trash2, AlertTriangle, Gauge } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import type { CurrencyCode } from '@/types';
 
@@ -93,7 +93,47 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="glass-card p-6 animate-fade-in-up stagger-3 border-[var(--apple-danger)]/30">
+        <div className="glass-card p-6 animate-fade-in-up stagger-3">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-[var(--apple-warning)]/10 flex items-center justify-center">
+              <Gauge className="w-5 h-5 text-[var(--apple-warning)]" />
+            </div>
+            <div>
+              <h2 className="font-semibold">Лимиты</h2>
+              <p className="text-sm text-[var(--apple-muted)]">
+                Дневной и месячный лимит расходов
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-[var(--apple-muted)] mb-1">Дневной лимит</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={settings.dailyLimit}
+                  onChange={(e) => updateSettings({ dailyLimit: Number(e.target.value) || 0 })}
+                  className="apple-input"
+                />
+                <span className="text-[var(--apple-muted)]">{settings.currency}</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm text-[var(--apple-muted)] mb-1">Месячный лимит</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={settings.monthlyLimit}
+                  onChange={(e) => updateSettings({ monthlyLimit: Number(e.target.value) || 0 })}
+                  className="apple-input"
+                />
+                <span className="text-[var(--apple-muted)]">{settings.currency}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-6 animate-fade-in-up stagger-4 border-[var(--apple-danger)]/30">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-10 h-10 rounded-xl bg-[var(--apple-danger)]/10 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-[var(--apple-danger)]" />

@@ -12,10 +12,15 @@ export interface ExpenseType {
   categoryId: string;
 }
 
+export type Person = 'Даня' | 'Лизун';
+
+export const PEOPLE: Person[] = ['Даня', 'Лизун'];
+
 export interface Expense {
   id: string;
   categoryId: string;
   typeId: string;
+  person: Person;
   amount: number;
   date: string;
   note: string;
@@ -25,6 +30,8 @@ export interface Expense {
 export interface Settings {
   currency: '₽' | '$' | '€' | '₸';
   darkMode: boolean;
+  dailyLimit: number;
+  monthlyLimit: number;
 }
 
 export type CurrencyCode = '₽' | '$' | '€' | '₸';
