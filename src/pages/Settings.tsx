@@ -99,38 +99,24 @@ export default function Settings() {
               <Gauge className="w-5 h-5 text-[var(--apple-warning)]" />
             </div>
             <div>
-              <h2 className="font-semibold">Лимиты</h2>
+              <h2 className="font-semibold">Месячный лимит</h2>
               <p className="text-sm text-[var(--apple-muted)]">
-                Дневной и месячный лимит расходов
+                Общий месячный лимит расходов
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-[var(--apple-muted)] mb-1">Дневной лимит</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={settings.dailyLimit}
-                  onChange={(e) => updateSettings({ dailyLimit: Number(e.target.value) || 0 })}
-                  className="apple-input"
-                />
-                <span className="text-[var(--apple-muted)]">{settings.currency}</span>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm text-[var(--apple-muted)] mb-1">Месячный лимит</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={settings.monthlyLimit}
-                  onChange={(e) => updateSettings({ monthlyLimit: Number(e.target.value) || 0 })}
-                  className="apple-input"
-                />
-                <span className="text-[var(--apple-muted)]">{settings.currency}</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 max-w-xs">
+            <input
+              type="number"
+              value={settings.monthlyLimit}
+              onChange={(e) => updateSettings({ monthlyLimit: Number(e.target.value) || 0 })}
+              className="apple-input"
+            />
+            <span className="text-[var(--apple-muted)]">{settings.currency}</span>
           </div>
+          <p className="mt-3 text-sm text-[var(--apple-muted)]">
+            Дневные лимиты настраиваются в админ-панели отдельно для каждой категории и каждого человека.
+          </p>
         </div>
 
         <div className="glass-card p-6 animate-fade-in-up stagger-4 border-[var(--apple-danger)]/30">

@@ -4,6 +4,7 @@ export interface Category {
   color: string;
   icon: string;
   budgetLimit: number;
+  dailyLimits: Record<Person, number>;
 }
 
 export interface ExpenseType {
@@ -30,7 +31,6 @@ export interface Expense {
 export interface Settings {
   currency: '₽' | '$' | '€' | '₸';
   darkMode: boolean;
-  dailyLimit: number;
   monthlyLimit: number;
 }
 

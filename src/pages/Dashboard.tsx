@@ -7,6 +7,8 @@ import ExpenseCard from '@/components/ExpenseCard';
 import CategoryIcon from '@/components/CategoryIcon';
 import { formatAmount } from '@/utils/format';
 import { getStartOfDay, getStartOfWeek, getStartOfMonth } from '@/utils/format';
+import { PEOPLE } from '@/types';
+import type { Person } from '@/types';
 
 export default function Dashboard() {
   const { expenses, categories, settings, deleteExpense } = useAppStore();
@@ -59,9 +61,39 @@ export default function Dashboard() {
     return categoryData.filter((c) => c.value > c.limit);
   }, [categoryData]);
 
-  const dailyPercent = Math.min((stats.dayTotal / settings.dailyLimit) * 100, 100);
+  const dailyLimitData = useMemo(() => {
+    const today = getStartOfDay();
+    return categories.flatMap((category) =>
+      PEOPLE.map((person) => {
+        const spent = expenses
+          .filter(
+            (e) =>
+              e.categoryId === category.id &&
+              e.person === person &&
+              new Date(e.date) >= today
+          )
+          .reduce((sum, e) => sum + e.amount, 0);
+        const limit = category.dailyLimits[person] ?? 0;
+        return {
+          categoryId: category.id,
+          categoryName: category.name,
+          categoryColor: category.color,
+          person,
+          spent,
+          limit,
+          isOver: spent > limit,
+          percent: limit > 0 ? Math.min((spent / limit) * 100, 100) : 0,
+        };
+      })
+    );
+  }, [categories, expenses]);
+
+  const overDailyLimits = useMemo(
+    () => dailyLimitData.filter((d) => d.isOver),
+    [dailyLimitData]
+  );
+
   const monthlyPercent = Math.min((stats.monthTotal / settings.monthlyLimit) * 100, 100);
-  const isDailyOver = stats.dayTotal > settings.dailyLimit;
   const isMonthlyOver = stats.monthTotal > settings.monthlyLimit;
 
   const statCards = [
@@ -97,50 +129,72 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 animate-fade-in-up stagger-4">
-        <div className="glass-card p-5">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm text-[var(--apple-muted)]">Дневной лимит</span>
-            <span className={isDailyOver ? 'text-[var(--apple-danger)] font-medium' : 'text-[var(--apple-muted)] text-sm'}>
-              {formatAmount(stats.dayTotal, settings.currency)} / {formatAmount(settings.dailyLimit, settings.currency)}
-            </span>
-          </div>
-          <div className="h-2.5 rounded-full bg-[var(--apple-surface-2)] overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${dailyPercent}%`,
-                backgroundColor: isDailyOver ? 'var(--apple-danger)' : 'var(--apple-accent)',
-              }}
-            />
-          </div>
-          {isDailyOver && (
-            <p className="mt-2 text-xs text-[var(--apple-danger)]">Дневной лимит превышен</p>
-          )}
+      <div className="glass-card p-5 mb-8 animate-fade-in-up stagger-4">
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-sm text-[var(--apple-muted)]">Месячный лимит</span>
+          <span className={isMonthlyOver ? 'text-[var(--apple-danger)] font-medium' : 'text-[var(--apple-muted)] text-sm'}>
+            {formatAmount(stats.monthTotal, settings.currency)} / {formatAmount(settings.monthlyLimit, settings.currency)}
+          </span>
         </div>
-        <div className="glass-card p-5">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm text-[var(--apple-muted)]">Месячный лимит</span>
-            <span className={isMonthlyOver ? 'text-[var(--apple-danger)] font-medium' : 'text-[var(--apple-muted)] text-sm'}>
-              {formatAmount(stats.monthTotal, settings.currency)} / {formatAmount(settings.monthlyLimit, settings.currency)}
-            </span>
-          </div>
-          <div className="h-2.5 rounded-full bg-[var(--apple-surface-2)] overflow-hidden">
+        <div className="h-2.5 rounded-full bg-[var(--apple-surface-2)] overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{
+              width: `${monthlyPercent}%`,
+              backgroundColor: isMonthlyOver ? 'var(--apple-danger)' : 'var(--apple-success)',
+            }}
+          />
+        </div>
+        {isMonthlyOver && (
+          <p className="mt-2 text-xs text-[var(--apple-danger)]">Месячный лимит превышен</p>
+        )}
+      </div>
+
+      <div className="glass-card p-6 mb-8 animate-fade-in-up stagger-4">
+        <h2 className="text-xl font-semibold mb-2">Дневные лимиты по категориям</h2>
+        <p className="text-sm text-[var(--apple-muted)] mb-6">Сегодняшние траты Дани и Лизуна</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-80 overflow-y-auto pr-2">
+          {dailyLimitData.map((item) => (
             <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${monthlyPercent}%`,
-                backgroundColor: isMonthlyOver ? 'var(--apple-danger)' : 'var(--apple-success)',
-              }}
-            />
-          </div>
-          {isMonthlyOver && (
-            <p className="mt-2 text-xs text-[var(--apple-danger)]">Месячный лимит превышен</p>
-          )}
+              key={`${item.categoryId}-${item.person}`}
+              className="p-4 rounded-xl bg-[var(--apple-surface-2)]/50 border border-[var(--apple-border)]"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <CategoryIcon icon={item.categoryColor} color={item.categoryColor} size="sm" />
+                  <span className="font-medium text-sm">{item.categoryName}</span>
+                </div>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    item.isOver
+                      ? 'bg-[var(--apple-danger)]/10 text-[var(--apple-danger)]'
+                      : 'bg-[var(--apple-accent)]/10 text-[var(--apple-accent)]'
+                  }`}
+                >
+                  {item.person}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className={item.isOver ? 'text-[var(--apple-danger)]' : 'text-[var(--apple-muted)]'}>
+                  {formatAmount(item.spent, settings.currency)} / {formatAmount(item.limit, settings.currency)}
+                </span>
+                <span className="text-[var(--apple-muted)] text-xs">{Math.round(item.percent)}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-[var(--apple-surface-2)] overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${item.percent}%`,
+                    backgroundColor: item.isOver ? 'var(--apple-danger)' : item.categoryColor,
+                  }}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {(overBudgetCategories.length > 0 || isDailyOver || isMonthlyOver) && (
+      {(overBudgetCategories.length > 0 || overDailyLimits.length > 0 || isMonthlyOver) && (
         <div className="glass-card p-4 mb-8 border-[var(--apple-danger)]/30 bg-[var(--apple-danger)]/5 animate-fade-in-up stagger-4">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-[var(--apple-danger)] mt-0.5" />
@@ -148,7 +202,13 @@ export default function Dashboard() {
               <p className="font-medium text-[var(--apple-danger)]">Превышен лимит</p>
               <p className="text-sm text-[var(--apple-muted)]">
                 {[
-                  ...(isDailyOver ? ['дневной'] : []),
+                  ...(overDailyLimits.length > 0
+                    ? [
+                        `дневные: ${overDailyLimits
+                          .map((d) => `${d.categoryName} (${d.person})`)
+                          .join(', ')}`,
+                      ]
+                    : []),
                   ...(isMonthlyOver ? ['месячный'] : []),
                   ...(overBudgetCategories.length > 0
                     ? [`категории: ${overBudgetCategories.map((c) => c.name).join(', ')}`]

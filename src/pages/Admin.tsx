@@ -13,6 +13,8 @@ import { useAppStore } from '@/store/useAppStore';
 import CategoryIcon, { availableIcons } from '@/components/CategoryIcon';
 import { cn } from '@/lib/utils';
 import { formatAmount } from '@/utils/format';
+import { PEOPLE } from '@/types';
+import type { Person } from '@/types';
 
 type Tab = 'categories' | 'types' | 'limits';
 
@@ -63,11 +65,17 @@ export default function Admin() {
 
   const handleAddCategory = () => {
     if (!newCategoryName.trim()) return;
+    const budgetLimit = Number(newCategoryLimit) || 0;
+    const defaultDaily = Math.max(100, Math.round(budgetLimit / 30 / PEOPLE.length));
     addCategory({
       name: newCategoryName.trim(),
       color: newCategoryColor,
       icon: newCategoryIcon,
-      budgetLimit: Number(newCategoryLimit) || 0,
+      budgetLimit,
+      dailyLimits: {
+        'Даня': defaultDaily,
+        'Лизун': defaultDaily,
+      } as Record<Person, number>,
     });
     setNewCategoryName('');
     setNewCategoryLimit('10000');
@@ -391,34 +399,79 @@ export default function Admin() {
       )}
 
       {activeTab === 'limits' && (
-        <div className="glass-card p-6 animate-fade-in-up stagger-2">
-          <h2 className="text-lg font-semibold mb-6">Лимиты по категориям</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className="p-4 rounded-xl bg-[var(--apple-surface-2)]/50 border border-[var(--apple-border)] flex items-center gap-4"
-              >
-                <CategoryIcon icon={category.icon} color={category.color} size="md" />
-                <div className="flex-1">
-                  <p className="font-medium">{category.name}</p>
-                  <p className="text-sm text-[var(--apple-muted)]">
-                    Текущий лимит: {formatAmount(category.budgetLimit, settings.currency)}
-                  </p>
+        <div className="space-y-6 animate-fade-in-up stagger-2">
+          <div className="glass-card p-6">
+            <h2 className="text-lg font-semibold mb-6">Месячные лимиты по категориям</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="p-4 rounded-xl bg-[var(--apple-surface-2)]/50 border border-[var(--apple-border)] flex items-center gap-4"
+                >
+                  <CategoryIcon icon={category.icon} color={category.color} size="md" />
+                  <div className="flex-1">
+                    <p className="font-medium">{category.name}</p>
+                    <p className="text-sm text-[var(--apple-muted)]">
+                      Текущий лимит: {formatAmount(category.budgetLimit, settings.currency)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      defaultValue={category.budgetLimit}
+                      onBlur={(e) =>
+                        updateCategory(category.id, { budgetLimit: Number(e.target.value) || 0 })
+                      }
+                      className="apple-input w-28 text-right"
+                    />
+                    <span className="text-[var(--apple-muted)]">{settings.currency}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    defaultValue={category.budgetLimit}
-                    onBlur={(e) =>
-                      updateCategory(category.id, { budgetLimit: Number(e.target.value) || 0 })
-                    }
-                    className="apple-input w-28 text-right"
-                  />
-                  <span className="text-[var(--apple-muted)]">{settings.currency}</span>
+              ))}
+            </div>
+          </div>
+
+          <div className="glass-card p-6">
+            <h2 className="text-lg font-semibold mb-2">Дневные лимиты по категориям и людям</h2>
+            <p className="text-sm text-[var(--apple-muted)] mb-6">
+              Укажите, сколько Даня и Лизун могут потратить в день в каждой категории
+            </p>
+            <div className="space-y-4">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="p-4 rounded-xl bg-[var(--apple-surface-2)]/50 border border-[var(--apple-border)]"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <CategoryIcon icon={category.icon} color={category.color} size="sm" />
+                    <span className="font-medium">{category.name}</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {PEOPLE.map((person) => (
+                      <div key={person}>
+                        <label className="block text-sm text-[var(--apple-muted)] mb-1">{person}</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={category.dailyLimits[person] ?? 0}
+                            onChange={(e) =>
+                              updateCategory(category.id, {
+                                dailyLimits: {
+                                  ...category.dailyLimits,
+                                  [person]: Number(e.target.value) || 0,
+                                },
+                              })
+                            }
+                            className="apple-input text-right"
+                          />
+                          <span className="text-[var(--apple-muted)]">{settings.currency}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}

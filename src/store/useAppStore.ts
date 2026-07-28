@@ -1,17 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Category, Expense, ExpenseType, Settings } from '@/types';
+import type { Category, Expense, ExpenseType, Settings, Person } from '@/types';
+import { PEOPLE } from '@/types';
 
 const generateId = () => Math.random().toString(36).substring(2, 10);
 
 const defaultCategories: Category[] = [
-  { id: 'cat-1', name: 'Продукты', color: '#30d158', icon: 'ShoppingBasket', budgetLimit: 15000 },
-  { id: 'cat-2', name: 'Транспорт', color: '#2997ff', icon: 'Bus', budgetLimit: 5000 },
-  { id: 'cat-3', name: 'Развлечения', color: '#ff375f', icon: 'Gamepad2', budgetLimit: 8000 },
-  { id: 'cat-4', name: 'Здоровье', color: '#af52de', icon: 'HeartPulse', budgetLimit: 6000 },
-  { id: 'cat-5', name: 'Жильё', color: '#ff9500', icon: 'Home', budgetLimit: 30000 },
-  { id: 'cat-6', name: 'Одежда', color: '#5ac8fa', icon: 'Shirt', budgetLimit: 7000 },
-  { id: 'cat-7', name: 'Прочее', color: '#8e8e93', icon: 'MoreHorizontal', budgetLimit: 3000 },
+  { id: 'cat-1', name: 'Продукты', color: '#30d158', icon: 'ShoppingBasket', budgetLimit: 15000, dailyLimits: { 'Даня': 800, 'Лизун': 800 } },
+  { id: 'cat-2', name: 'Транспорт', color: '#2997ff', icon: 'Bus', budgetLimit: 5000, dailyLimits: { 'Даня': 300, 'Лизун': 300 } },
+  { id: 'cat-3', name: 'Развлечения', color: '#ff375f', icon: 'Gamepad2', budgetLimit: 8000, dailyLimits: { 'Даня': 400, 'Лизун': 400 } },
+  { id: 'cat-4', name: 'Здоровье', color: '#af52de', icon: 'HeartPulse', budgetLimit: 6000, dailyLimits: { 'Даня': 300, 'Лизун': 300 } },
+  { id: 'cat-5', name: 'Жильё', color: '#ff9500', icon: 'Home', budgetLimit: 30000, dailyLimits: { 'Даня': 1000, 'Лизун': 1000 } },
+  { id: 'cat-6', name: 'Одежда', color: '#5ac8fa', icon: 'Shirt', budgetLimit: 7000, dailyLimits: { 'Даня': 500, 'Лизун': 500 } },
+  { id: 'cat-7', name: 'Прочее', color: '#8e8e93', icon: 'MoreHorizontal', budgetLimit: 3000, dailyLimits: { 'Даня': 200, 'Лизун': 200 } },
 ];
 
 const defaultTypes: ExpenseType[] = [
@@ -64,7 +65,23 @@ const initialState = {
   expenses: demoExpenses,
   categories: defaultCategories,
   types: defaultTypes,
-  settings: { currency: '₽' as const, darkMode: true, dailyLimit: 3000, monthlyLimit: 60000 },
+  settings: { currency: '₽' as const, darkMode: true, monthlyLimit: 60000 },
+};
+
+const migrateCategoryDailyLimits = (categories: Category[]): Category[] => {
+  return categories.map((category) => {
+    if (category.dailyLimits && PEOPLE.every((p) => typeof category.dailyLimits[p] === 'number')) {
+      return category;
+    }
+    const defaultDaily = Math.max(100, Math.round(category.budgetLimit / 30 / PEOPLE.length));
+    return {
+      ...category,
+      dailyLimits: {
+        'Даня': category.dailyLimits?.['Даня'] ?? defaultDaily,
+        'Лизун': category.dailyLimits?.['Лизун'] ?? defaultDaily,
+      } as Record<Person, number>,
+    };
+  });
 };
 
 export const useAppStore = create<AppState>()(
@@ -118,6 +135,14 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'expense-tracker-storage',
+      version: 1,
+      migrate: (persistedState) => {
+        const state = persistedState as { categories?: Category[] };
+        if (state.categories) {
+          state.categories = migrateCategoryDailyLimits(state.categories);
+        }
+        return state;
+      },
     }
   )
 );
