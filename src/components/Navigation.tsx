@@ -5,9 +5,9 @@ import {
   PlusCircle,
   Shield,
   Settings,
-  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import LogoIcon from '@/components/LogoIcon';
 
 const navItems = [
   { path: '/', label: 'Дашборд', icon: LayoutDashboard },
@@ -24,8 +24,8 @@ export default function Navigation() {
       <nav className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-[var(--apple-border)] bg-[var(--apple-surface)]/50 backdrop-blur-xl z-50">
         <div className="p-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[var(--apple-accent)] flex items-center justify-center shadow-lg shadow-[var(--apple-accent)]/20">
-              <Wallet className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-[var(--apple-accent)] flex items-center justify-center shadow-lg shadow-[var(--apple-accent)]/20 text-white">
+              <LogoIcon className="w-6 h-6" />
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight">Expense</h1>
