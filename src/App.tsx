@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from '@/components/Layout';
 import PasswordGate from '@/components/PasswordGate';
+import SyncToServer from '@/components/SyncToServer';
 import Dashboard from '@/pages/Dashboard';
 import History from '@/pages/History';
 import Add from '@/pages/Add';
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <PasswordGate>
       <Router>
+        <SyncToServer />
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />

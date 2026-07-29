@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import type { Category, Expense, ExpenseType, Settings, Person } from '@/types';
 import { PEOPLE } from '@/types';
+import { loadSharedState, saveSharedState } from '@/lib/supabase';
+import type { SharedState } from '@/lib/supabase';
 
 const generateId = () => Math.random().toString(36).substring(2, 10);
 
@@ -42,11 +43,14 @@ const demoExpenses: Expense[] = [
   { id: 'exp-3', categoryId: 'cat-3', typeId: 'type-9', person: 'Даня', amount: 599, date: new Date(Date.now() - 86400000).toISOString().split('T')[0], note: 'Подписка на стриминг', currency: '₽' },
 ];
 
-interface AppState {
+export interface AppState {
   expenses: Expense[];
   categories: Category[];
   types: ExpenseType[];
   settings: Settings;
+  isLoading: boolean;
+  isSaving: boolean;
+  error: string | null;
   addExpense: (expense: Omit<Expense, 'id'>) => void;
   updateExpense: (id: string, data: Partial<Expense>) => void;
   deleteExpense: (id: string) => void;
@@ -59,9 +63,11 @@ interface AppState {
   updateSettings: (settings: Partial<Settings>) => void;
   resetAll: () => void;
   hasExpensesForCategory: (categoryId: string) => boolean;
+  loadFromServer: () => Promise<void>;
+  setError: (error: string | null) => void;
 }
 
-const initialState = {
+const initialData = {
   expenses: demoExpenses,
   categories: defaultCategories,
   types: defaultTypes,
@@ -84,65 +90,99 @@ const migrateCategoryDailyLimits = (categories: Category[]): Category[] => {
   });
 };
 
-export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
-      ...initialState,
-      addExpense: (expense) =>
-        set((state) => ({
-          expenses: [...state.expenses, { ...expense, id: generateId() }],
-        })),
-      updateExpense: (id, data) =>
-        set((state) => ({
-          expenses: state.expenses.map((e) => (e.id === id ? { ...e, ...data } : e)),
-        })),
-      deleteExpense: (id) =>
-        set((state) => ({
-          expenses: state.expenses.filter((e) => e.id !== id),
-        })),
-      addCategory: (category) =>
-        set((state) => ({
-          categories: [...state.categories, { ...category, id: generateId() }],
-        })),
-      updateCategory: (id, data) =>
-        set((state) => ({
-          categories: state.categories.map((c) => (c.id === id ? { ...c, ...data } : c)),
-        })),
-      deleteCategory: (id) =>
-        set((state) => ({
-          categories: state.categories.filter((c) => c.id !== id),
-          types: state.types.filter((t) => t.categoryId !== id),
-        })),
-      addType: (type) =>
-        set((state) => ({
-          types: [...state.types, { ...type, id: generateId() }],
-        })),
-      updateType: (id, data) =>
-        set((state) => ({
-          types: state.types.map((t) => (t.id === id ? { ...t, ...data } : t)),
-        })),
-      deleteType: (id) =>
-        set((state) => ({
-          types: state.types.filter((t) => t.id !== id),
-        })),
-      updateSettings: (settings) =>
-        set((state) => ({
-          settings: { ...state.settings, ...settings },
-        })),
-      resetAll: () => set({ ...initialState, expenses: [] }),
-      hasExpensesForCategory: (categoryId) =>
-        get().expenses.some((e) => e.categoryId === categoryId),
-    }),
-    {
-      name: 'expense-tracker-storage',
-      version: 1,
-      migrate: (persistedState) => {
-        const state = persistedState as { categories?: Category[] };
-        if (state.categories) {
-          state.categories = migrateCategoryDailyLimits(state.categories);
-        }
-        return state;
-      },
+export const useAppStore = create<AppState>()((set, get) => ({
+  ...initialData,
+  isLoading: true,
+  isSaving: false,
+  error: null,
+  addExpense: (expense) =>
+    set((state) => ({
+      expenses: [...state.expenses, { ...expense, id: generateId() }],
+    })),
+  updateExpense: (id, data) =>
+    set((state) => ({
+      expenses: state.expenses.map((e) => (e.id === id ? { ...e, ...data } : e)),
+    })),
+  deleteExpense: (id) =>
+    set((state) => ({
+      expenses: state.expenses.filter((e) => e.id !== id),
+    })),
+  addCategory: (category) =>
+    set((state) => ({
+      categories: [...state.categories, { ...category, id: generateId() }],
+    })),
+  updateCategory: (id, data) =>
+    set((state) => ({
+      categories: state.categories.map((c) => (c.id === id ? { ...c, ...data } : c)),
+    })),
+  deleteCategory: (id) =>
+    set((state) => ({
+      categories: state.categories.filter((c) => c.id !== id),
+      types: state.types.filter((t) => t.categoryId !== id),
+    })),
+  addType: (type) =>
+    set((state) => ({
+      types: [...state.types, { ...type, id: generateId() }],
+    })),
+  updateType: (id, data) =>
+    set((state) => ({
+      types: state.types.map((t) => (t.id === id ? { ...t, ...data } : t)),
+    })),
+  deleteType: (id) =>
+    set((state) => ({
+      types: state.types.filter((t) => t.id !== id),
+    })),
+  updateSettings: (settings) =>
+    set((state) => ({
+      settings: { ...state.settings, ...settings },
+    })),
+  resetAll: () => set({ ...initialData, expenses: [], isLoading: false, isSaving: false, error: null }),
+  hasExpensesForCategory: (categoryId) =>
+    get().expenses.some((e) => e.categoryId === categoryId),
+  loadFromServer: async () => {
+    try {
+      set({ isLoading: true, error: null });
+      const serverState = await loadSharedState();
+      if (serverState) {
+        set({
+          expenses: serverState.expenses ?? initialData.expenses,
+          categories: migrateCategoryDailyLimits(serverState.categories ?? initialData.categories),
+          types: serverState.types ?? initialData.types,
+          settings: { ...initialData.settings, ...(serverState.settings ?? {}) },
+          isLoading: false,
+        });
+      } else {
+        set({ isLoading: false });
+      }
+    } catch (err) {
+      set({ isLoading: false, error: err instanceof Error ? err.message : 'Ошибка загрузки данных' });
     }
-  )
-);
+  },
+  setError: (error) => set({ error }),
+}));
+
+let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+export const saveStoreToServer = async () => {
+  const state = useAppStore.getState();
+  const payload: SharedState = {
+    expenses: state.expenses,
+    categories: state.categories,
+    types: state.types,
+    settings: state.settings,
+  };
+
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(async () => {
+    try {
+      useAppStore.setState({ isSaving: true, error: null });
+      await saveSharedState(payload);
+      useAppStore.setState({ isSaving: false });
+    } catch (err) {
+      useAppStore.setState({
+        isSaving: false,
+        error: err instanceof Error ? err.message : 'Ошибка сохранения данных',
+      });
+    }
+  }, 800);
+};
