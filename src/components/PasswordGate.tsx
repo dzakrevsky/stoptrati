@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 
-const CORRECT_PASSWORD = 'oleg';
+const CORRECT_PASSWORD = 'stopwecx2026';
 const COOKIE_NAME = 'expense_tracker_auth';
 const COOKIE_VALUE = 'oleg_authorized';
 
