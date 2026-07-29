@@ -3,9 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { useAppStore } from './store/useAppStore';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { supabaseUrl, supabaseKey } from './lib/supabase';
 
 if (supabaseUrl && supabaseKey) {
   useAppStore.getState().loadFromServer();
