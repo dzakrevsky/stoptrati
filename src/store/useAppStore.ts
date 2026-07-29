@@ -38,9 +38,9 @@ const defaultTypes: ExpenseType[] = [
 ];
 
 const demoExpenses: Expense[] = [
-  { id: 'exp-1', categoryId: 'cat-1', typeId: 'type-1', person: 'Даня', amount: 2450, date: new Date().toISOString().split('T')[0], note: 'Пятничная закупка', currency: '₽' },
-  { id: 'exp-2', categoryId: 'cat-2', typeId: 'type-4', person: 'Лизун', amount: 380, date: new Date().toISOString().split('T')[0], note: 'До дома', currency: '₽' },
-  { id: 'exp-3', categoryId: 'cat-3', typeId: 'type-9', person: 'Даня', amount: 599, date: new Date(Date.now() - 86400000).toISOString().split('T')[0], note: 'Подписка на стриминг', currency: '₽' },
+  { id: 'exp-1', categoryId: 'cat-1', typeId: 'type-1', person: 'Даня', amount: 2450, date: new Date().toISOString().split('T')[0], note: 'Пятничная закупка', currency: 'Br' },
+  { id: 'exp-2', categoryId: 'cat-2', typeId: 'type-4', person: 'Лизун', amount: 380, date: new Date().toISOString().split('T')[0], note: 'До дома', currency: 'Br' },
+  { id: 'exp-3', categoryId: 'cat-3', typeId: 'type-9', person: 'Даня', amount: 599, date: new Date(Date.now() - 86400000).toISOString().split('T')[0], note: 'Подписка на стриминг', currency: 'Br' },
 ];
 
 export interface AppState {
@@ -71,7 +71,7 @@ const initialData = {
   expenses: demoExpenses,
   categories: defaultCategories,
   types: defaultTypes,
-  settings: { currency: '₽' as const, darkMode: true, monthlyLimit: 60000 },
+  settings: { currency: 'Br' as const, darkMode: true, monthlyLimit: 60000 },
 };
 
 const migrateCategoryDailyLimits = (categories: Category[]): Category[] => {

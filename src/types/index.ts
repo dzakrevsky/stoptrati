@@ -29,9 +29,9 @@ export interface Expense {
 }
 
 export interface Settings {
-  currency: '₽' | '$' | '€' | '₸';
+  currency: 'Br' | '$' | '€' | '₸';
   darkMode: boolean;
   monthlyLimit: number;
 }
 
-export type CurrencyCode = '₽' | '$' | '€' | '₸';
+export type CurrencyCode = 'Br' | '$' | '€' | '₸';

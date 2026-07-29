@@ -4,7 +4,7 @@ import { useAppStore } from '@/store/useAppStore';
 import type { CurrencyCode } from '@/types';
 
 const currencies: { code: CurrencyCode; label: string }[] = [
-  { code: '₽', label: 'Российский рубль' },
+  { code: 'Br', label: 'Белорусский рубль' },
   { code: '$', label: 'Доллар США' },
   { code: '€', label: 'Евро' },
   { code: '₸', label: 'Казахстанский тенге' },
